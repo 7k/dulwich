@@ -369,6 +369,29 @@ class DiffTests(TestCase):
             '-same'
             ], f.getvalue().splitlines())
 
+    def test_object_diff_bin_blob(self):
+        f = StringIO()
+        b1 = Blob.from_string(
+            "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52"
+            "\x00\x00\x01\xd5\x00\x00\x00\x9f\x08\x04\x00\x00\x00\x05\x04\x8b")
+        b2 = Blob.from_string(
+            "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52"
+            "\x00\x00\x01\xd5\x00\x00\x00\x9f\x08\x03\x00\x00\x00\x98\xd3\xb3")
+        store = MemoryObjectStore()
+        store.add_objects([(b1, None), (b2, None)])
+        write_object_diff(f, store, ("foo.png", 0644, b1.id),
+                                    ("bar.png", 0644, b2.id))
+        self.assertEqual([
+            "diff --git a/foo.png b/bar.png",
+            "index f73e47d..06364b7 644",
+            "--- a/foo.png",
+            "+++ b/bar.png",
+            "@@ -1,2 +1,2 @@",
+            "-old",
+            "+new",
+            " same"
+            ], f.getvalue().splitlines())
+
     def test_object_diff_kind_change(self):
         f = StringIO()
         b1 = Blob.from_string("new\nsame\n")
